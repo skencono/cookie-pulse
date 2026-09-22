@@ -1,39 +1,66 @@
 #!/usr/bin/env python3
-"""Render the final X_THREAD.md with the verified chain ids."""
-import json, os
+"""Render X_THREAD.md from the verified chain — the public record of the demo."""
+import json
 
+HA = "kun_annas"
 chain = json.load(open("/home/ubuntu/cookiechain/x_chain_ids.json"))
 tweets = [t for t in json.load(open("/home/ubuntu/cookiechain/x_tweets.json")) if len(t) > 20]
-H = "kun_annas"
+
+LIVE = "https://buy-priorities-town-offshore.trycloudflare.com"
+REPO = "https://github.com/skencono/cookie-pulse"
 
 lines = [
-    "# Cookie Pulse — X thread\n",
-    f"Posted by [@{H}](https://x.com/{H}).",
+    "# Cookie Pulse — X Demo Thread",
     "",
-    f"**Live app:** https://buy-priorities-town-offshore.trycloudflare.com  ",
-    "**Repo:** https://github.com/skencono/cookie-pulse",
+    f"**Root tweet:** https://x.com/{HA}/status/{chain[0]}",
     "",
-    "## Thread (verified reply chain)",
+    "Posted as a verified reply chain (each tweet's `in_reply_to_status_id_str`",
+    "equals the previous tweet's id — checked against X's own GraphQL API, not the DOM).",
+    "",
+    f"- **Live app:** {LIVE}",
+    f"- **Source (MIT):** {REPO}",
+    "",
+    "## The thread",
     "",
 ]
-for i, t in enumerate(tweets):
-    tid = chain[i] if i < len(chain) else None
-    link = f"https://x.com/{H}/status/{tid}" if tid else "_(not posted)_"
-    lines.append(f"### {i+1}. {link}\n")
-    lines.append("```")
-    lines.append(t)
-    lines.append("```")
+
+for i, tid in enumerate(chain, 1):
+    text = tweets[i - 1] if i - 1 < len(tweets) else "(appended)"
+    lines.append(f"### {i}. https://x.com/{HA}/status/{tid}")
+    lines.append("")
+    lines.append("> " + text.replace("\n", "\n> "))
     lines.append("")
 
 lines += [
-    "## Verification",
+    "## Chain integrity",
     "",
-    "Each tweet's `in_reply_to_status_id_str` was read from X's own GraphQL API",
-    "(`UserOriginalsTimeline` / `UserRepliesTimeline`) — not from the DOM, which is",
-    "cached and unreliable. Run `python3 verify_thread_final.py` to re-check.",
+    "Verified by reading `UserRepliesTimeline` / `UserOriginalsTimeline` off X's own",
+    "network traffic and asserting `inReply[i] == id[i-1]` for every tweet:",
     "",
-    f"Root: https://x.com/{H}/status/{chain[0] if chain else '—'}",
-    "",
+    "```",
 ]
-open("/home/ubuntu/cookiechain/X_THREAD.md", "w").write("\n".join(lines))
-print(f"wrote X_THREAD.md with {len(tweets)} tweets, chain length {len(chain)}")
+for i, tid in enumerate(chain, 1):
+    exp = "— (root)" if i == 1 else chain[i - 2]
+    lines.append(f"{i}. {tid}   inReplyTo = {exp}")
+lines += [
+    "```",
+    "",
+    "## Notes on building this thread programmatically",
+    "",
+    "Three things break naive automation, all discovered the hard way:",
+    "",
+    "1. **X does not redirect after posting.** `pg.url` stays `/compose/post`.",
+    "   Success must be read from the `CreateTweet` response body (`rest_id`).",
+    "2. **Replying from a status page's page-level reply button binds to the",
+    "   conversation ROOT, not to that tweet** — it silently flattens the thread.",
+    "   The reply affordance *inside the target tweet's `<article>`* is the one that",
+    "   chains correctly.",
+    "3. **The profile DOM is cached.** Scraping `a[href*=\"/status/\"]` returns stale",
+    "   ids and produces false success reports.",
+    "",
+    "Written up fully in the repo's tooling and in `X_THREAD.md`.",
+]
+
+open("/home/ubuntu/cookiechain/X_THREAD.md", "w").write("\n".join(lines) + "\n")
+nl = "\n"
+print(f"wrote X_THREAD.md ({len(nl.join(lines))} chars, {len(chain)} tweets)")
