@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Cookie Pulse — X Thread</title>
+<style>
+ body{background:#0b0710;color:#f3ecff;font-family:system-ui,-apple-system,sans-serif;
+   max-width:820px;margin:0 auto;padding:26px 20px 70px;line-height:1.7}
+ h1{font-size:25px}h2{font-size:17px;color:#ffb545;margin-top:24px}
+ h3{font-size:12.5px;color:#9d8bb8;margin:18px 0 6px;text-transform:uppercase;letter-spacing:1px}
+ pre{background:#1a1128;border:1px solid #33224d;border-radius:10px;padding:13px;
+   white-space:pre-wrap;font-size:12.5px;font-family:ui-monospace,Menlo,monospace}
+ a{color:#7cc4ff}code{background:#00000044;padding:2px 6px;border-radius:5px}
+ .back{display:inline-block;margin-bottom:14px;font-size:13px}
+ hr{border:0;border-top:1px solid #33224d;margin:20px 0}
+ ul{padding-left:22px}li{margin:3px 0}
+</style></head><body>
+<a class="back" href="/">← back to Cookie Pulse</a>
+<div id="body"></div>
+<script>
+const MD = "# Cookie Pulse \u2014 X thread\n\nPosted by [@kun_annas](https://x.com/kun_annas).\n\n**Root tweet:** https://x.com/kun_annas/status/2102267903525683545 _(first attempt \u2014\nsee note below)_\n\n## Thread content (8 posts, all \u2264 280 chars)\n\n### 1/8\n\ud83c\udf6a Built Cookie Pulse \u2014 a live on-chain terminal for @TheCookieChain\n\nEvery number read from rpc.cookiescan.io. No mock data.\n\n40,000+ accounts indexed on-chain. Sub-second finality. ~$0.000005 fees.\n\n### 2/8\nLive: https://buy-priorities-town-offshore.trycloudflare.com\nCode: https://github.com/skencono/cookie-pulse \ud83e\uddf5\n\nWhat's inside?\n\n### 3/8\n\ud83d\udce1 Slot / epoch / finality \u2014 live\n\u26a1 Real TPS + avg fee\n\ud83e\ude99 COOK supply from getSupply\n\ud83c\udf09 551M COOK locked in the bridge\n\ud83d\udcc8 $GOR price + 24h change\n\ud83d\udcca 14-day tx & wallet history\n\nAll fetched at request time.\n\n### 4/8\nPools aren't from an indexer \u2014 they're enumerated on-chain with getProgramAccounts:\n\n\u2022 CookieBox DBC\n\u2022 Cookieswap DAMM\n\u2022 CookieBox CLMM\n\u2022 Jupiter v6 \u00b7 Raydium \u00b7 Orca\n\u2022 Cookie Name Service (.cook)\n\u2022 Squads v4\n\n44,000+ accounts, grouped by program + discriminator.\n\n### 5/8\nIt's not just read-only \ud83d\udc47\n\nConnect Nightly (plus Phantom / Solflare) and really write to Cookie Chain:\n\n\ud83d\udd38 Tip COOK \u2014 SystemProgram.transfer\n\ud83d\udd38 Self Transfer \u2014 0.001 COOK test\n\ud83d\udd38 Memo Note \u2014 text on-chain\n\n### 6/8\nFull flow: signing \u2192 submitting \u2192 confirming \u2192 confirmed, with a Cookiescan link.\n\nError handling is real too.\n\n### 7/8\nNot enough COOK? It points you at the faucet instead of dying. Failed txs surface the actual RPC reason.\n\nPaste any address into the Wallet Inspector for COOK balance, tokens and signatures.\n\n### 8/8\nShipping here is fast \u2014 one Node process, no build step, no API keys.\n\n\ud83d\udd17 Live: https://buy-priorities-town-offshore.trycloudflare.com\n\ud83d\udcbb Code: https://github.com/skencono/cookie-pulse\n\ud83d\udcd6 https://docs.cookiechain.wtf\n\nBridge in: https://hyperlane.cookiescan.io\n\nNeed COOK? Follow @CookOvenApps \u2192 https://cookoven.xyz/faucet \ud83c\udf6a\n\n---\n\n## Posting notes (hard-won)\n\nX **redirects to `/home` after a successful post**, so the new tweet id is never\nin the URL. Two failure modes were hit and fixed:\n\n1. **Reading the profile timeline** returns a cached page \u2014 the newly posted tweet\n   may not appear for a while, and stale ids get picked up instead.\n2. **Reading `article[0]` on the status page** returns the *root* tweet, not the\n   reply, so DOM scraping reports every tweet as replying to the first one.\n\nThe technique that works:\n\n* `since = time.time()` immediately **before** clicking Post.\n* Right after posting, open `https://x.com/<handle>/with_replies` (this stream\n  updates immediately) and filter `article` elements by\n  `<time datetime>` \u2265 `since`.\n* The newest surviving id is the tweet just posted.\n\nTo prove a chain is real (rather than assuming), query X's internal GraphQL\n`TweetResultByRestId` and check each tweet's `in_reply_to_status_id_str` points at\nthe *previous* tweet, not the root. That call needs three headers beyond\n`authorization`:\n\n```\nx-csrf-token: <ct0 cookie>\nx-twitter-active-user: yes\nx-twitter-auth-type: OAuth2Session\n```\n\nWithout `x-csrf-token` X returns\n`This request requires a matching csrf cookie and header.`\n";
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function md2html(src){
+  let s = esc(src);
+  s = s.replace(/```([a-z]*)\n([\s\S]*?)```/g, (m,l,c)=> '\u0000PRE'+btoa(unescape(encodeURIComponent(c)))+'PRE\u0000');
+  s = s.replace(/^### (.*)$/gm,'<h3>$1</h3>')
+       .replace(/^## (.*)$/gm,'<h2>$1</h2>')
+       .replace(/^# (.*)$/gm,'<h1>$1</h1>')
+       .replace(/^---$/gm,'<hr>')
+       .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+       .replace(/`([^`]+)`/g,'<code>$1</code>')
+       .replace(/\[(.+?)\]\((.+?)\)/g,'<a href="$2" target="_blank">$1</a>');
+  s = s.replace(/^(- .*)$/gm,'<li>$1</li>')
+       .replace(/(?:<li>[\s\S]*?<\/li>\n?)+/g, m => '<ul>'+m+'</ul>');
+  s = s.split('\n').map(l => l.startsWith('<')||l.startsWith('\u0000') ? l : (l.trim()? '<p>'+l+'</p>' : '')).join('');
+  s = s.replace(/\u0000PRE([A-Za-z0-9+/=]+)PRE\u0000/g, (m,b)=>'<pre>'+decodeURIComponent(escape(atob(b)))+'</pre>');
+  return s;
+}
+document.getElementById('body').innerHTML = md2html(MD);
+</script></body></html>

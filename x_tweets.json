@@ -1,0 +1,10 @@
+[
+ "🍪 Built Cookie Pulse — a live on-chain terminal for @TheCookieChain\n\nEvery number read from rpc.cookiescan.io. No mock data.\n\n40,000+ accounts indexed on-chain. Sub-second finality. ~$0.000005 fees.",
+ "Live: https://buy-priorities-town-offshore.trycloudflare.com\nCode: https://github.com/skencono/cookie-pulse 🧵\n\nWhat's inside?",
+ "📡 Slot / epoch / finality — live\n⚡ Real TPS + avg fee\n🪙 COOK supply from getSupply\n🌉 551M COOK locked in the bridge\n📈 $GOR price + 24h change\n📊 14-day tx & wallet history\n\nAll fetched at request time.",
+ "Pools aren't from an indexer — they're enumerated on-chain with getProgramAccounts:\n\n• CookieBox DBC\n• Cookieswap DAMM\n• CookieBox CLMM\n• Jupiter v6 · Raydium · Orca\n• Cookie Name Service (.cook)\n• Squads v4\n\n44,000+ accounts, grouped by program + discriminator.",
+ "It's not just read-only 👇\n\nConnect Nightly (plus Phantom / Solflare) and really write to Cookie Chain:\n\n🔸 Tip COOK — SystemProgram.transfer\n🔸 Self Transfer — 0.001 COOK test\n🔸 Memo Note — text on-chain",
+ "Full flow: signing → submitting → confirming → confirmed, with a Cookiescan link.\n\nError handling is real too.\n\nNot enough COOK? It points you at the faucet instead of dying. Failed txs surface the actual RPC reason.",
+ "Paste any address into the Wallet Inspector for COOK balance, tokens and signatures.\n\nShipping here is fast — one Node process, no build step, no API keys.",
+ "🔗 Live: https://buy-priorities-town-offshore.trycloudflare.com\n💻 Code: https://github.com/skencono/cookie-pulse\n📖 https://docs.cookiechain.wtf\n\nBridge in: https://hyperlane.cookiescan.io\n\nNeed COOK? Follow @CookOvenApps → https://cookoven.xyz/faucet 🍪"
+]

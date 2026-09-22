@@ -1,126 +1,131 @@
-# 🍪 Cookie Pulse — Live On-Chain Terminal for Cookie Chain
+# Cookie Pulse 🍪
 
-**A cApp built on [Cookie Chain](https://www.cookiechain.wtf) — a Solana-compatible SVM with sub-second finality and ~$0.000005 transaction fees.**
+**A live on-chain terminal for [Cookie Chain](https://www.cookiechain.wtf)** — an SVM
+(Solana-compatible) chain with sub-second finality and ~$0.000005 transaction fees.
 
-🔗 **Live app:** https://buy-priorities-town-offshore.trycloudflare.com
-📡 **RPC:** `https://rpc.cookiescan.io`
+**Live app:** https://buy-priorities-town-offshore.trycloudflare.com
+**Chain RPC:** https://rpc.cookiescan.io
+**Explorer:** https://www.cookiescan.io
 
 ---
 
 ## What it does
 
-Cookie Pulse is a **read + write terminal** for Cookie Chain. Every number on the
-page is fetched live from `rpc.cookiescan.io` and the public Cookiescan APIs at
-request time — there is no mock data, no database, no cache.
+Cookie Pulse turns Cookie Chain's RPC into a readable, real-time dashboard and a
+working transaction console. **Every number on screen is fetched live from
+`rpc.cookiescan.io` — there is no database, no mock data, and no cache.**
 
-### Live chain telemetry (read)
-| Panel | Source | What it shows |
+| Feature | What it does | How |
 |---|---|---|
-| Slot / Epoch / Finality | `getSlot`, `getEpochInfo` | current slot, epoch, commitment latency |
-| Throughput & Fee | Cookiescan `/api/break/stats` | real network TPS and average fee per tx |
-| COOK Supply | `getSupply` | circulating supply |
-| Bridge Locked | Cookiescan `/api/bridge/stats` | COOK locked in bridge escrow + transfer count |
-| $GOR Price | Cookiescan `/api/gor/price` | live price, 24h change, market cap |
-| Daily Activity | Cookiescan `/api/analytics/daily` | 14-day tx / active-wallet / fee history |
-| NFT Collections | Metaplex DAS + `/api/collections` | collections minted on Cookie Chain |
+| **Live chain telemetry** | Slot, block height, epoch, tx count, TPS, finality, supply | `getSlot`, `getEpochInfo`, `getBlockHeight`, `getTransactionCount`, `getSupply` |
+| **Wallet Inspector** | COOK balance, SPL holdings, recent signatures for any address | `getBalance`, `getTokenAccountsByOwner`, `getSignaturesForAddress` |
+| **Pools & Liquidity** | Enumerates every AMM pool account on-chain | `getProgramAccounts` over 9 AMM programs |
+| **Program Registry** | 14 known Cookie Chain programs with live account counts | `getProgramAccounts` |
+| **Live Transaction Feed** | Decodes real transactions from recent blocks | `getBlock` + parsed instructions |
+| **NFT Collections** | Metaplex collections with supply | Cookie DAS `getAssetsByOwner` |
+| **Bridge Stats** | COOK bridged to/from other chains | `api.cookiescan.io/api/bridge/stats` |
+| **Daily Network Chart** | 14 days of transactions, active wallets, fees | `api.cookiescan.io/api/analytics/daily` |
+| **Send COOK** | Connect a wallet, sign, submit, track confirmation | `@solana/web3.js` |
+| **Nightly wallet** | **Required integration — supported** | `window.nightly.solana` → `window.solana` |
 
-### On-chain pool enumeration (read)
-Pools are discovered **directly from chain** with `getProgramAccounts` across every
-AMM/LB program live on Cookie Chain — no indexer required:
+## Wallet support
 
-| Program | Label |
-|---|---|
-| `DBCg4ugDEztk6MbqHEJvx5a5YGJTj45Jb5Nv...` | CookieBox DBC (Meteora bonding curve) |
-| `DAMMjDCEFTDkt7ywazZS8GoaLtjb3HaJo3pL...` | Cookieswap DAMM |
-| `CLMMmWqTtyNSomqXP3kETJy2SGKPdr31USsm...` | CookieBox CLMM |
-| `JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5...` | Jupiter v6 |
-| `675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24...` | Raydium AMM v4 |
-| `namesLPneVptA9Z5rqUDD9tMTWEJwofgaYw...` | Cookie Name Service (`.cook`) |
-| `SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjk...` | Squads v4 |
+Nightly is a first-class citizen: the app detects `window.nightly.solana`, falls
+back to `window.solana`, and exposes the *same* flow for Phantom, Solflare, and
+Backpack. Multiple injected providers are resolved by `name` so Nightly wins when
+several extensions are installed.
 
-The dashboard aggregates **40,000+ on-chain accounts** across these programs and
-breaks them down by program + data discriminator.
-
-### Wallet connectivity + transactions (write)
-- Connects **Nightly** (required by the brief), plus Phantom, Solflare and Backpack.
-- Displays the connected wallet address and live COOK balance.
-- **Wallet Inspector** — paste any address to read COOK balance, SPL token accounts
-  and recent signatures.
-- **Write path:**
-  - **Tip COOK** — `SystemProgram.transfer` to any address.
-  - **Self Transfer** — 0.001 COOK round-trip (safe smoke test for the write path).
-  - **Memo Note** — writes a text memo on-chain via the SPL Memo program.
-- Full lifecycle feedback: *building → signing → submitting → confirming → confirmed*,
-  with a link to the transaction on Cookiescan and human-readable error handling
-  (including an explicit "use the faucet" hint when the balance is too low).
-
----
-
-## Quick start
-
-```bash
-git clone <this-repo> && cd cookie-pulse
-npm install
-npm start          # → http://localhost:8787
+```js
+function pick(win) {
+  if (win.nightly?.solana) return win.nightly.solana;   // Nightly
+  const injected = win.solana;
+  if (injected?.providers?.length)
+    return injected.providers.find(p => /nightly/i.test(p.name)) || injected.providers[0];
+  return injected;
+}
 ```
 
-The server serves both the API and the static frontend. No API keys required —
-all endpoints used are public.
+## Transaction flow
 
-### ⚠️ Node + PM2 note
-If Node aborts with `core dumped` on start, your shell inherited PM2 environment
-variables. Start with a clean environment:
+`connect → build → sign → send → confirm`, with the status surfaced at every step:
 
-```bash
-env -i PATH=/usr/bin:/bin HOME=$HOME LANG=C.UTF-8 node server.js
+```
+building… → awaiting signature (check your wallet) → submitting… → confirming… → ✅ confirmed
 ```
 
-`start.sh` in this repo already does exactly that.
-
----
-
-## API reference
-
-| Endpoint | Description |
-|---|---|
-| `GET /api/health` | slot, block height, epoch, tx count, supply, TPS, finality |
-| `GET /api/stats` | network stats + bridge reserves + $GOR price + 14-day analytics |
-| `GET /api/pools` | on-chain account census across all AMM programs (+ samples) |
-| `GET /api/activity` | most recent confirmed transactions |
-| `GET /api/wallet/:address` | COOK balance, SPL tokens, recent signatures |
-| `GET /api/nfts` | NFT collections on Cookie Chain (DAS) |
-| `GET /api/programs` | ecosystem program registry |
-
----
-
-## Tech
-
-- **Backend:** Node.js + Express + `@solana/web3.js` — talks to Cookie Chain RPC and
-  the Cookiescan public APIs.
-- **Frontend:** a single dependency-free HTML file using `@solana/web3.js` (IIFE) for
-  wallet connection and transaction construction. No framework, no build step.
-- **Chain:** Cookie Chain SVM (`solana-core 4.1.2`), chain id equivalent to Solana
-  mainnet tooling; SPL Token, Token-2022, Metaplex DAS and Meteora-style AMMs all work.
+Failures are mapped to human hints: user rejection, insufficient COOK (with the
+faucet link), blockhash expiry, and RPC errors each get their own message.
 
 ## Architecture
 
 ```
-browser  ──HTTP──▶  express server  ──JSON-RPC──▶  rpc.cookiescan.io
-   │                     │
-   │                     └──REST──▶  cookiescan.io/api/*   (stats, bridge, price, DAS)
+browser (public/index.html)
+   │  @solana/web3.js  ── wallet signing
+   ▼
+RPC https://rpc.cookiescan.io            ← all chain reads + tx submission
    │
-   └──wallet adapter──▶ Nightly / Phantom / Solflare  ──signed tx──▶ Cookie Chain
+Express (server.js) ── CORS-safe aggregator, static hosting
+   │
+DAS/REST https://api.cookiescan.io       ← NFTs, bridge, analytics, token price
 ```
 
-The backend exists to normalize RPC results, batch `getProgramAccounts` calls and
-add CORS — the frontend never holds a key and every write is signed in the user's
-wallet.
+The browser talks to the chain directly for anything that involves a signature.
+The Express layer only exists to avoid CORS on the analytics/DAS endpoints and to
+serve the static app.
 
-## Getting COOK
+## Run locally
 
-1. Bridge from Solana at https://hyperlane.cookiescan.io
-2. Faucet — follow [@CookOvenApps](https://x.com/CookOvenApps) and claim 5 COOK at
-   https://cookoven.xyz/faucet
+```bash
+git clone https://github.com/skencono/cookie-pulse
+cd cookie-pulse
+npm install
+
+# Node on some VPS hosts aborts (exit 134) when it inherits a polluted environ.
+# Use a clean env if that happens — this is what ./start.sh wraps:
+env -i PATH=/usr/bin:/bin HOME=$HOME LANG=C.UTF-8 node server.js
+```
+
+Open http://localhost:8787.
+
+### Expose publicly
+
+```bash
+./cloudflared tunnel --url http://127.0.0.1:8787
+```
+
+## API (backend aggregator)
+
+| Endpoint | Returns |
+|---|---|
+| `GET /api/health` | slot, blockHeight, epoch, txCount, supply, TPS, finality, version |
+| `GET /api/stats` | bridge totals, token price, fee stats |
+| `GET /api/programs` | the 14-program registry |
+| `GET /api/pools` | on-chain AMM pool enumeration |
+| `GET /api/activity` | recent decoded transactions |
+| `GET /api/nfts` | collections via DAS |
+| `GET /api/analytics` | the 14-day daily series |
+| `GET /api/wallet/:address` | balance, SPL tokens, signatures |
+
+## Cookie Chain programs used
+
+```
+CookieBox DBC      DBCg4ugDEztk6MbqHEJvx5a5YGJTj45Jb5NvtQ48Rvsf
+CookieBox DAMM v2  DAMMjDCEFTDkt7ywazZS8GoaLtjb3HaJo3pLbf64xrPY
+CookieBox CLMM    CLMMmWqTtyNSomqXP3kETJy2SGKPdr31USsm4GfbLyKs
+Jupiter v6         JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4
+
+Cookieswap SAMM    WTzkPUoprVx7PDc1tfKA5sS7k1ynCgU89WtwZhksHX5
+Cookieswap CPAMMv2 6Y3VJBWWqFvDkSBdT3Pcb3DNaJ7cA1JPHAiLfo7JhyFq
+Cookieswap CPAMMv3 5cYqbWRziT7dNi8Nb5poJr7nSuuocREj9SfBiuUYVVqc
+CPAMM              cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG
+Cookieswap DAMM    DAMMjDCEFTDkt7ywazZS8GoaLtjb3HaJo3pLbf64xrPY
+Cookieora DAMMv2   EvRMsRW8NcaSRcy5Mgmsdj9Udk9ryGYq6hwkhicCZzSF
+
+Solana Name Service namesLPneVptA9Z5rqUDD9tMTWEJwofgaYwp8cawRkX  (.cook)
+Squads v4          SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf
+Raydium AMM v4     675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8
+Meteora DBC fork   dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN
+```
 
 ## License
 
