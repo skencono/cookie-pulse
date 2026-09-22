@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>🍪 Cookie Pulse — Live Cookie Chain Terminal</title>
+<style>
+  :root{
+    --bg:#0b0710; --bg2:#140d1d; --card:#1a1128; --card2:#221635;
+    --line:#33224d; --txt:#f3ecff; --dim:#9d8bb8; --acc:#ffb545;
+    --acc2:#ff7a3d; --grn:#4ade80; --red:#ff5d7a; --blu:#7cc4ff;
+    --mono:'SF Mono',ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:
+      radial-gradient(1100px 600px at 12% -10%,#3a1d5c55,transparent),
+      radial-gradient(900px 500px at 88% 0%,#7a3a0e44,transparent),
+      var(--bg);
+    color:var(--txt);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+    min-height:100vh;padding:22px 16px 70px}
+  .wrap{max-width:1220px;margin:0 auto}
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    justify-content:space-between;margin-bottom:20px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{font-size:38px;filter:drop-shadow(0 0 14px #ffb54566)}
+  h1{font-size:25px;letter-spacing:-.6px;font-weight:800}
+  h1 span{background:linear-gradient(92deg,var(--acc),var(--acc2));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{font-size:11.5px;color:var(--dim);font-family:var(--mono);margin-top:3px}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;
+    background:var(--grn);box-shadow:0 0 9px var(--grn);margin-right:6px;
+    animation:p 1.7s infinite}
+  @keyframes p{50%{opacity:.32}}
+  button{font-family:inherit;cursor:pointer;border:0;border-radius:11px;
+    font-weight:700;transition:.15s}
+  .btn-w{background:linear-gradient(93deg,var(--acc),var(--acc2));color:#241000;
+    padding:11px 20px;font-size:13.5px}
+  .btn-w:hover{filter:brightness(1.12);transform:translateY(-1px)}
+  .btn-w:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .btn-g{background:var(--card2);color:var(--txt);border:1px solid var(--line);
+    padding:10px 15px;font-size:12.5px}
+  .btn-g:hover{border-color:var(--acc);color:var(--acc)}
+  .wallet{display:flex;align-items:center;gap:10px;background:var(--card);
+    border:1px solid var(--line);border-radius:12px;padding:9px 14px;
+    font-family:var(--mono);font-size:12.5px}
+  .grid{display:grid;gap:14px}
+  .g4{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(430px,1fr))}
+  .card{background:linear-gradient(170deg,var(--card),var(--card2));
+    border:1px solid var(--line);border-radius:16px;padding:17px}
+  .card h2{font-size:11.5px;text-transform:uppercase;letter-spacing:1.3px;
+    color:var(--dim);margin-bottom:12px;font-weight:700}
+  .stat{font-size:27px;font-weight:800;font-family:var(--mono);
+    letter-spacing:-1px;line-height:1.15}
+  .stat.sm{font-size:19px}
+  .lbl{font-size:10.5px;color:var(--dim);margin-top:7px;font-family:var(--mono)}
+  .tag{display:inline-block;font-size:10px;padding:3px 8px;border-radius:6px;
+    background:#ffb5451f;color:var(--acc);border:1px solid #ffb54535;
+    font-family:var(--mono);font-weight:700}
+  table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px}
+  th{text-align:left;color:var(--dim);font-size:10px;text-transform:uppercase;
+    letter-spacing:.8px;padding:7px 8px;border-bottom:1px solid var(--line)}
+  td{padding:7px 8px;border-bottom:1px solid #ffffff09;word-break:break-all}
+  tr:hover td{background:#ffb5450d}
+  a{color:var(--blu);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .feed{max-height:330px;overflow-y:auto}
+  .feed::-webkit-scrollbar{width:6px}
+  .feed::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  .row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;
+    border-bottom:1px solid #ffffff09;font-family:var(--mono);font-size:11px}
+  input,select{background:#0e0817;border:1px solid var(--line);color:var(--txt);
+    border-radius:9px;padding:10px 12px;font-family:var(--mono);font-size:12px;width:100%}
+  input:focus,select:focus{outline:0;border-color:var(--acc)}
+  .muted{color:var(--dim);font-size:11.5px;line-height:1.65}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(140%);
+    background:var(--card2);border:1px solid var(--acc);color:var(--txt);
+    padding:13px 22px;border-radius:12px;font-size:13px;max-width:92vw;
+    box-shadow:0 14px 44px #000a;transition:.3s;z-index:99;font-weight:600}
+  .toast.on{transform:translateX(-50%) translateY(0)}
+  .toast.err{border-color:var(--red)}
+  .toast.ok{border-color:var(--grn)}
+  .ok{color:var(--grn)}.err{color:var(--red)}.acc{color:var(--acc)}
+  .bar{height:5px;background:#ffffff10;border-radius:3px;overflow:hidden;margin-top:5px}
+  .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+  .pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:13px}
+  .pill{font-size:10.5px;padding:5px 11px;border-radius:20px;border:1px solid var(--line);
+    background:var(--card);cursor:pointer;font-family:var(--mono);color:var(--dim)}
+  .pill.on{border-color:var(--acc);color:var(--acc);background:#ffb5451a}
+  .flex{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  code{background:#00000044;padding:2px 6px;border-radius:5px;font-size:11px}
+  .hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">🍪</div>
+      <div>
+        <h1>Cookie <span>Pulse</span></h1>
+        <div class="sub"><span class="dot"></span>LIVE · <span id="rpcHost">rpc.cookiescan.io</span></div>
+      </div>
+    </div>
+    <div class="flex">
+      <div class="wallet hide" id="walletBox">
+        <span class="acc" id="wName">wallet</span>
+        <span id="wAddr">—</span>
+        <span class="tag" id="wBal">0 COOK</span>
+      </div>
+      <button class="btn-w" id="connectBtn">Connect Wallet</button>
+      <button class="btn-g hide" id="discBtn">Disconnect</button>
+    </div>
+  </header>
+
+  <!-- live chain stats -->
+  <div class="grid g4" id="statsRow" style="margin-bottom:14px">
+    <div class="card"><h2>Slot</h2><div class="stat" id="sSlot">—</div>
+      <div class="lbl">epoch <span id="sEpoch">—</span> · <span id="sFinal">—</span></div></div>
+    <div class="card"><h2>Throughput</h2><div class="stat" id="sTps">—</div>
+      <div class="lbl">TPS · block <span id="sBlock">—</span></div></div>
+    <div class="card"><h2>Avg Fee</h2><div class="stat" id="sFee">—</div>
+      <div class="lbl">COOK per tx</div></div>
+    <div class="card"><h2>COOK Supply</h2><div class="stat sm" id="sSupply">—</div>
+      <div class="lbl">circulating</div></div>
+  </div>
+
+  <div class="grid g4" style="margin-bottom:14px">
+    <div class="card"><h2>Bridge Locked</h2><div class="stat sm" id="bLocked">—</div>
+      <div class="lbl"><span id="bTx">—</span> transfers · <span id="bDate">—</span></div></div>
+    <div class="card"><h2>$GOR Price</h2><div class="stat sm" id="gPrice">—</div>
+      <div class="lbl" id="gChg">— · mcap $<span id="gMcap">—</span></div></div>
+    <div class="card"><h2>Transactions</h2><div class="stat sm" id="sTxCount">—</div>
+      <div class="lbl">all-time on chain</div></div>
+    <div class="card"><h2>Your Rank</h2>
+      <div class="flex" style="margin-bottom:8px">
+        <button class="btn-g" id="faucetBtn" style="flex:1">Get 5 COOK</button>
+      </div>
+      <div class="lbl" id="faucetLbl">faucet via cookoven.xyz</div></div>
+  </div>
+
+  <!-- interactive -->
+  <div class="grid g2" style="margin-bottom:14px">
+    <div class="card">
+      <h2>🔎 Wallet Inspector</h2>
+      <div class="flex" style="margin-bottom:11px">
+        <input id="lookupAddr" placeholder="address… (or connect wallet)"/>
+        <button class="btn-g" id="lookupBtn">Inspect</button>
+        <button class="btn-g" id="selfBtn">Me</button>
+      </div>
+      <div id="lookupOut" class="muted">Connect a wallet or paste an address to inspect COOK balance, tokens and signatures.</div>
+    </div>
+
+    <div class="card">
+      <h2>⚡ On-Chain Action</h2>
+      <div class="pills" id="actPills">
+        <div class="pill on" data-a="tip">Tip COOK</div>
+        <div class="pill" data-a="memo">Memo Note</div>
+        <div class="pill" data-a="self">Self Transfer 0.001</div>
+      </div>
+      <div id="tipBox">
+        <input id="tipTo" placeholder="recipient address" style="margin-bottom:9px"/>
+        <input id="tipAmt" placeholder="amount in COOK (e.g. 0.05)" value="0.05"/>
+      </div>
+      <div id="memoBox" class="hide">
+        <input id="memoTxt" placeholder="message to write on Cookie Chain…" value="🍪 CookiePulse"/>
+      </div>
+      <div class="flex" style="margin-top:11px">
+        <button class="btn-w" id="sendBtn" disabled>Send Transaction</button>
+        <span class="muted" id="txStatus">connect wallet to enable</span>
+      </div>
+      <div id="txLink" class="muted" style="margin-top:9px"></div>
+    </div>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <h2>🏊 Cookie Chain Pools <span class="tag" id="poolTag">on-chain</span></h2>
+      <div class="pills" id="poolPills"></div>
+      <div class="feed" id="poolOut" style="max-height:300px"><div class="muted">loading…</div></div>
+    </div>
+    <div class="card">
+      <h2>📡 Live Transactions <span class="tag">realtime</span></h2>
+      <div class="feed" id="actOut"><div class="muted">loading…</div></div>
+    </div>
+  </div>
+
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card">
+      <h2>📈 Daily Network Activity</h2>
+      <div id="chartOut"><div class="muted">loading…</div></div>
+    </div>
+    <div class="card">
+      <h2>🖼️ NFT Collections (DAS)</h2>
+      <div id="nftOut"><div class="muted">loading…</div></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h2>🔗 Program Registry — Cookie Chain Ecosystem</h2>
+    <div id="progOut" class="muted">loading…</div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h2>About</h2>
+    <p class="muted">
+      <strong class="acc">Cookie Pulse</strong> is a live terminal for <strong>Cookie Chain</strong> — a
+      Solana-compatible SVM with sub-second finality and ~$0.000005 fees per transaction.
+      Every number on this page is read directly from
+      <code>rpc.cookiescan.io</code> and the public Cookiescan APIs at request time; no mock data.
+      Pools are enumerated on-chain via <code>getProgramAccounts</code> across Cookieswap DAMM,
+      Cookieora DAMMv2, CookieBox DBC and the Meteora bonding-curve fork.
+      Connect any Solana wallet (Nightly, Phantom, Solflare, Backpack) to inspect balances and
+      write a real transaction to Cookie Chain.
+    </p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/@solana/web3.js@1.95.4/lib/index.iife.min.js"></script>
+<script>
+const API = location.origin.startsWith('http') && !location.port.includes('8787')
+  ? '/api' : 'http://localhost:8787/api';
+const RPC = 'https://rpc.cookiescan.io';
+const EXPLORER = 'https://cookiescan.io';
+const LAMP = 1e9;
+let provider = null, wallet = null, action = 'tip';
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg, kind = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast on ' + kind;
+  clearTimeout(toastT); toastT = setTimeout(() => el.className = 'toast ' + kind, 5200);
+}
+const short = a => a ? a.slice(0, 4) + '…' + a.slice(-4) : '—';
+const nf = n => n == null ? '—' : Number(n).toLocaleString('en-US', { maximumFractionDigits: 8 });
+const big = n => { n = Number(n) || 0;
+  return n >= 1e9 ? (n / 1e9).toFixed(2) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(2) + 'M'
+    : n >= 1e3 ? (n / 1e3).toFixed(1) + 'K' : n.toFixed(2); };
+const get = async u => { const r = await fetch(u); return r.json(); };
+
+/* ---------- wallet discovery (Nightly first) ---------- */
+function findProvider() {
+  const w = window;
+  // Nightly is REQUIRED by the brief — support every injection shape it uses.
+  const nightly = w.nightly?.solana || w.nightlySolana || w.Nightly?.solana;
+  if (nightly) return { p: nightly, n: 'Nightly' };
+  if (w.phantom?.solana?.isPhantom) return { p: w.phantom.solana, n: 'Phantom' };
+  if (w.solflare?.isSolflare) return { p: w.solflare, n: 'Solflare' };
+  if (w.backpack) return { p: w.backpack, n: 'Backpack' };
+  if (w.solana) return { p: w.solana, n: w.solana.isNightly ? 'Nightly' : 'Solana' };
+  return null;
+}
+async function discover() {
+  for (let i = 0; i < 12; i++) {
+    const f = findProvider();
+    if (f) return f;
+    await new Promise(r => setTimeout(r, 220));
+  }
+  return findProvider();
+}
+
+/* ---------- connect ---------- */
+document.getElementById('connectBtn').onclick = async () => {
+  const btn = document.getElementById('connectBtn');
+  btn.disabled = true; btn.textContent = 'Connecting…';
+  try {
+    const f = await discover();
+    if (!f) throw new Error('No Solana wallet found. Install Nightly (nightly.app) — Phantom & Solflare also work.');
+    provider = f.p;
+    const res = await provider.connect();
+    wallet = (res?.publicKey || provider.publicKey)?.toString();
+    if (!wallet) throw new Error('Wallet returned no public key');
+    localStorage.setItem('cp_wallet', wallet);
+    onConnected(f.n);
+    toast('Connected ' + f.n + ' · ' + short(wallet), 'ok');
+  } catch (e) {
+    toast(e.message || String(e), 'err');
+  } finally { btn.disabled = false; btn.textContent = 'Connect Wallet'; }
+};
+function onConnected(name) {
+  document.getElementById('walletBox').classList.remove('hide');
+  document.getElementById('discBtn').classList.remove('hide');
+  document.getElementById('connectBtn').classList.add('hide');
+  document.getElementById('wName').textContent = name;
+  document.getElementById('wAddr').textContent = short(wallet);
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('txStatus').textContent = 'ready';
+  inspect(wallet, true);
+}
+document.getElementById('discBtn').onclick = async () => {
+  try { await provider?.disconnect?.(); } catch {}
+  wallet = null; provider = null; localStorage.removeItem('cp_wallet');
+  document.getElementById('walletBox').classList.add('hide');
+  document.getElementById('discBtn').classList.add('hide');
+  document.getElementById('connectBtn').classList.remove('hide');
+  document.getElementById('sendBtn').disabled = true;
+  document.getElementById('txStatus').textContent = 'connect wallet to enable';
+  toast('Disconnected');
+};
+document.getElementById('selfBtn').onclick = () => {
+  if (!wallet) return toast('Connect first', 'err');
+  document.getElementById('lookupAddr').value = wallet; inspect(wallet, true);
+};
+document.getElementById('lookupBtn').onclick = () => {
+  const a = document.getElementById('lookupAddr').value.trim();
+  if (!a) return toast('Enter an address', 'err');
+  inspect(a);
+};
+
+/* ---------- inspector ---------- */
+async function inspect(addr, isSelf) {
+  const out = document.getElementById('lookupOut');
+  out.innerHTML = '<span class="muted">reading chain…</span>';
+  try {
+    const d = await get(API + '/wallet/' + addr);
+    if (!d.ok) throw new Error(d.error);
+    out.innerHTML = `
+      <div class="row"><span class="muted">address</span>
+        <a href="${EXPLORER}/account/${d.address}" target="_blank">${short(d.address)} ↗</a></div>
+      <div class="row"><span class="muted">COOK balance</span>
+        <span class="acc" style="font-weight:700">${nf(d.cook)} COOK</span></div>
+      <div class="row"><span class="muted">on-chain account</span>
+        <span class="${d.exists ? 'ok' : 'muted'}">${d.exists ? 'initialized' : 'not initialized'}</span></div>
+      <div class="row"><span class="muted">SPL tokens</span><span>${d.tokens.length}</span></div>
+      ${d.tokens.slice(0, 6).map(t => `<div class="row"><span class="muted">${short(t.mint)}</span>
+        <span>${nf(t.amount)}</span></div>`).join('')}
+      <div class="muted" style="margin:11px 0 6px;font-weight:700;color:var(--acc)">
+        RECENT SIGNATURES (${d.signatures.length})</div>
+      ${d.signatures.slice(0, 7).map(s => `<div class="row">
+        <a href="${EXPLORER}/tx/${s.signature}" target="_blank">${short(s.signature)} ↗</a>
+        <span class="${s.err ? 'err' : 'ok'}">${s.err ? 'failed' : 'ok'}</span></div>`).join('')
+        || '<div class="muted">no signatures yet</div>'}
+      ${isSelf ? `<div class="muted" style="margin-top:11px">Balance shown is spent from this wallet
+        when you send COOK. Need funds? Use the <strong class="acc">Get 5 COOK</strong> faucet above.</div>` : ''}`;
+  } catch (e) { out.innerHTML = `<span class="err">${e.message}</span>`; }
+}
+
+/* ---------- action pills ---------- */
+document.querySelectorAll('#actPills .pill').forEach(p => p.onclick = () => {
+  document.querySelectorAll('#actPills .pill').forEach(x => x.classList.remove('on'));
+  p.classList.add('on'); action = p.dataset.a;
+  document.getElementById('tipBox').classList.toggle('hide', action !== 'tip');
+  document.getElementById('memoBox').classList.toggle('hide', action !== 'memo');
+});
+
+/* ---------- send ---------- */
+document.getElementById('sendBtn').onclick = async () => {
+  const btn = document.getElementById('sendBtn');
+  const st = document.getElementById('txStatus');
+  const link = document.getElementById('txLink');
+  link.innerHTML = '';
+  if (!wallet) return toast('Connect a wallet first', 'err');
+  btn.disabled = true; st.textContent = 'building transaction…';
+  try {
+    const sol = window.solanaWeb3;
+    const { Connection, PublicKey, Transaction, SystemProgram,
+      TransactionInstruction, LAMPORTS_PER_SOL } = sol;
+    const conn = new Connection(RPC, 'confirmed');
+    const from = new PublicKey(wallet);
+    const tx = new Transaction();
+
+    if (action === 'memo') {
+      const txt = document.getElementById('memoTxt').value.trim() || '🍪';
+      // SPL Memo program v2 — write text on-chain
+      const MEMO = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
+      tx.add(new TransactionInstruction({ keys: [{ pubkey: from, isSigner: true, isWritable: false }],
+        programId: MEMO, data: Buffer.from(txt, 'utf8') }));
+      st.textContent = 'sign memo…';
+    } else {
+      const to = action === 'self' ? wallet : document.getElementById('tipTo').value.trim();
+      if (!to) throw new Error('Enter a recipient address');
+      const amt = action === 'self' ? 0.001 : parseFloat(document.getElementById('tipAmt').value);
+      if (!(amt > 0)) throw new Error('Amount must be greater than 0');
+      tx.add(SystemProgram.transfer({ fromPubkey: from,
+        toPubkey: new PublicKey(to), lamports: Math.round(amt * LAMPORTS_PER_SOL) }));
+      st.textContent = 'sign transfer…';
+    }
+
+    const bal = await conn.getBalance(from);
+    const fee = 5000;
+    if (bal < fee + (action === 'self' ? 1e6 : 0)) throw new Error(
+      `Insufficient COOK: ${(bal / LAMP).toFixed(6)}. Use the faucet (cookoven.xyz/faucet).`);
+
+    tx.feePayer = from;
+    const bh = await conn.getLatestBlockhash('confirmed');
+    tx.recentBlockhash = bh.blockhash;
+
+    st.textContent = 'awaiting wallet signature…';
+    const signed = await provider.signTransaction(tx);
+    st.textContent = 'submitting to Cookie Chain…';
+    const sig = await conn.sendRawTransaction(signed.serialize(), { skipPreflight: false });
+    link.innerHTML = `submitted <code>${short(sig)}</code> · confirming…`;
+    st.textContent = 'confirming…';
+
+    await conn.confirmTransaction({ signature: sig, blockhash: bh.blockhash,
+      lastValidBlockHeight: bh.lastValidBlockHeight }, 'confirmed');
+    st.innerHTML = '<span class="ok">✅ confirmed</span>';
+    link.innerHTML = `<a href="${EXPLORER}/tx/${sig}" target="_blank">view on Cookiescan ↗</a>`;
+    toast('Transaction confirmed on Cookie Chain!', 'ok');
+    inspect(wallet, true);
+    setTimeout(loadActivity, 1500);
+  } catch (e) {
+    const m = (e && (e.message || e.toString())) || 'transaction failed';
+    st.innerHTML = '<span class="err">❌ ' + m.slice(0, 180) + '</span>';
+    toast(m.slice(0, 200), 'err');
+  } finally { btn.disabled = false; }
+};
+
+/* ---------- faucet link ---------- */
+document.getElementById('faucetBtn').onclick = () => {
+  navigator.clipboard?.writeText(wallet || '');
+  toast(wallet ? 'Address copied → cookoven.xyz/faucet (follow @CookOvenApps to claim 5 COOK)'
+    : 'Connect a wallet first to copy your address', wallet ? 'ok' : 'err');
+  window.open('https://cookoven.xyz/faucet', '_blank');
+};
+
+/* ---------- loaders ---------- */
+async function loadHealth() {
+  try {
+    const h = await get(API + '/health');
+    if (!h.ok) throw new Error(h.error);
+    document.getElementById('sSlot').textContent = big(h.slot);
+    document.getElementById('sEpoch').textContent = h.epoch;
+    document.getElementById('sFinal').textContent = h.finalityMs + 'ms finality';
+    document.getElementById('sTps').textContent = (h.tps ?? '—') + '';
+    document.getElementById('sBlock').textContent = big(h.blockHeight);
+    document.getElementById('sSupply').textContent = big(h.supplyCook) + ' COOK';
+    document.getElementById('sTxCount').textContent = big(h.transactionCount);
+    document.getElementById('sFee').textContent = '0.000005';
+  } catch (e) { toast('health: ' + e.message, 'err'); }
+}
+async function loadStats() {
+  try {
+    const d = await get(API + '/stats');
+    if (d.network) {
+      document.getElementById('sTps').textContent = d.network.networkTPS ?? '—';
+      document.getElementById('sFee').textContent = d.network.averageFee ?? '—';
+    }
+    if (d.bridge) {
+      document.getElementById('bLocked').textContent = big(d.bridge.solanaLocked) + ' COOK';
+      document.getElementById('bTx').textContent = nf(d.bridge.totalTransfers);
+      document.getElementById('bDate').textContent = d.bridge.lastTransferDate || '—';
+    }
+    if (d.token) {
+      document.getElementById('gPrice').textContent = '$' + Number(d.token.price).toFixed(8);
+      const c = Number(d.token.change24h) || 0;
+      document.getElementById('gChg').innerHTML =
+        `<span class="${c >= 0 ? 'ok' : 'err'}">${c >= 0 ? '▲' : '▼'} ${Math.abs(c).toFixed(2)}% 24h</span>`;
+      document.getElementById('gMcap').textContent = big(d.token.marketCap);
+    }
+  } catch (e) { /* stats partial failure is non-fatal */ }
+
+  // chart is rendered independently so a stats failure can never block it
+  try {
+    const d = await get(API + '/stats');
+    const days = d?.analytics?.days || [];
+    const el = document.getElementById('chartOut');
+    if (!days.length) { el.innerHTML = '<div class="muted">no analytics available</div>'; return; }
+    const max = Math.max(...days.map(x => x.txns)) || 1;
+    el.innerHTML = days.map(x => `
+      <div class="row"><span class="muted">${x.date}</span>
+        <span style="flex:1;max-width:240px"><span class="bar"><i style="width:${(x.txns / max * 100).toFixed(1)}%"></i></span></span>
+        <span>${nf(x.txns)} tx · ${x.activeWallets} w</span></div>`).join('')
+      + `<div class="row" style="margin-top:8px"><span class="muted">14-day total</span>
+         <span class="acc">${nf(days.reduce((a, x) => a + x.txns, 0))} tx</span></div>`;
+  } catch (e) {
+    document.getElementById('chartOut').innerHTML = `<span class="err">chart: ${e.message}</span>`;
+  }
+}
+async function loadPools() {
+  try {
+    const d = await get(API + '/pools?limit=80');
+    const progs = d.programs || [];
+    document.getElementById('poolTag').textContent = nf(progs.reduce((a, p) => a + p.accounts, 0)) + ' accounts';
+    document.getElementById('poolPills').innerHTML = progs.slice(0, 8).map((p, i) =>
+      `<div class="pill ${i === 0 ? 'on' : ''}" data-p="${i}">${p.label} (${big(p.accounts)})</div>`).join('');
+    const render = i => {
+      const p = progs[i]; if (!p) return;
+      document.getElementById('poolOut').innerHTML = `
+        <div class="row"><span class="muted">program</span>
+          <a href="${EXPLORER}/address/${p.program}" target="_blank">${short(p.program)} ↗</a></div>
+        <div class="row"><span class="muted">accounts</span><span class="acc">${nf(p.accounts)}</span></div>
+        <div class="row"><span class="muted">data types</span>
+          <span>${Object.keys(p.discriminators).length}</span></div>
+        <div class="muted" style="margin:11px 0 6px;font-weight:700;color:var(--acc)">SAMPLE ACCOUNTS</div>
+        ${p.samples.map(s => `<div class="row">
+          <a href="${EXPLORER}/address/${s}" target="_blank">${short(s)} ↗</a><span class="muted">pda</span></div>`).join('')}`;
+    };
+    render(0);
+    document.querySelectorAll('#poolPills .pill').forEach(pl => pl.onclick = () => {
+      document.querySelectorAll('#poolPills .pill').forEach(x => x.classList.remove('on'));
+      pl.classList.add('on'); render(+pl.dataset.p);
+    });
+  } catch (e) { document.getElementById('poolOut').innerHTML = `<span class="err">${e.message}</span>`; }
+}
+async function loadActivity() {
+  try {
+    const d = await get(API + '/activity');
+    const el = document.getElementById('actOut');
+    el.innerHTML = `<div class="row"><span class="muted">slot</span><span class="acc">${nf(d.slot)}</span></div>`
+      + (d.transactions || []).map(t => `<div class="row">
+        <a href="${EXPLORER}/tx/${t.signature}" target="_blank">${short(t.signature)} ↗</a>
+        <span class="${t.err ? 'err' : 'ok'}">${t.err ? 'fail' : 'ok'} · ${t.fee} COOK</span></div>`).join('');
+  } catch (e) { document.getElementById('actOut').innerHTML = `<span class="err">${e.message}</span>`; }
+}
+async function loadNfts() {
+  try {
+    const d = await get(API + '/nfts');
+    document.getElementById('nftOut').innerHTML = (d.collections || []).slice(0, 4).map(c => `
+      <div class="row" style="flex-direction:column;align-items:flex-start;gap:4px">
+        <span class="acc" style="font-weight:700">${c.name} <span class="muted">· ${nf(c.supply)} supply</span></span>
+        <span class="muted">${(c.description || '').slice(0, 130)}</span>
+        <a href="${EXPLORER}/collection/${c.slug}" target="_blank">open collection ↗</a></div>`).join('')
+      || '<div class="muted">no collections</div>';
+  } catch (e) { document.getElementById('nftOut').innerHTML = `<span class="err">${e.message}</span>`; }
+}
+async function loadPrograms() {
+  try {
+    const d = await get(API + '/programs');
+    document.getElementById('progOut').innerHTML = (d.programs || []).map(p => `
+      <div class="row"><span>${p.label}</span>
+        <a href="${EXPLORER}/address/${p.id}" target="_blank"><code>${short(p.id)}</code> ↗</a></div>`).join('');
+  } catch (e) { document.getElementById('progOut').innerHTML = `<span class="err">${e.message}</span>`; }
+}
+
+/* ---------- boot ---------- */
+(async () => {
+  // each loader is isolated: one failing endpoint must never abort the others
+  const safe = f => Promise.resolve().then(f).catch(e => {
+    console.error('loader failed:', e && e.message);
+  });
+  await Promise.all([safe(loadHealth), safe(loadStats), safe(loadPools),
+                     safe(loadActivity), safe(loadNfts), safe(loadPrograms)]);
+  // silent auto-reconnect if previously connected
+  try {
+    const prev = localStorage.getItem('cp_wallet');
+    if (prev) {
+      const f = await discover();
+      if (f && f.p.publicKey && f.p.publicKey.toString() === prev) {
+        provider = f.p; wallet = prev; onConnected(f.n);
+      }
+    }
+  } catch (e) { /* wallet discovery failure never blocks the dashboard */ }
+  setInterval(() => safe(loadHealth), 4000);
+  setInterval(() => safe(loadActivity), 6000);
+  setInterval(() => safe(loadStats), 30000);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# nodeclean — run a command with the environment Hermes/PM2 left behind stripped.
+# Without this, Node aborts (SIGABRT, core dumped) on this host.
+exec env -i \
+  PATH="/usr/bin:/bin:/usr/local/bin" \
+  HOME="/home/ubuntu" \
+  LANG="C.UTF-8" \
+  TERM="${TERM:-xterm}" \
+  "$@"
